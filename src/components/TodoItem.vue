@@ -19,26 +19,28 @@
         @keyup.esc="cancelEdit"
       />
     </div>
-    <div class="remove-item" @click="removeTodo(index)">&times;</div>
+    <div>
+      <button @click="pluralize">Plural</button>
+      <span class="remove-item" @click="removeTodo(index)">&times;</span>
+    </div>
   </div>
-</template>
-
+</template> 
 <script>
 export default {
   name: "todo-item",
   props: {
     todo: {
       type: Object,
-      required: true
+      required: true,
     },
     index: {
       type: Number,
-      required: true
+      required: true,
     },
     checkAll: {
       type: Boolean,
-      required: true
-    }
+      required: true,
+    },
   },
   data() {
     return {
@@ -46,8 +48,14 @@ export default {
       title: this.todo.title,
       completed: this.todo.completed,
       editing: this.todo.editing,
-      beforeEditCache: ""
+      beforeEditCache: "",
     };
+  },
+  created() {
+    window.eventBus.$on("pluralize", this.handlePluralize);
+  },
+  beforeDestroy() {
+    window.eventBus.$off("pluralize", this.handlePluralize);
   },
   watch: {
     checkAll() {
@@ -57,18 +65,18 @@ export default {
       //   this.completed = this.todo.completed;
       // }
       this.completed = this.checkAll ? true : this.todo.completed;
-    }
+    },
   },
   directives: {
     focus: {
-      inserted: function(el) {
+      inserted: function (el) {
         el.focus();
-      }
-    }
+      },
+    },
   },
   methods: {
     removeTodo(index) {
-      this.$emit("removeTodo", index);
+      window.eventBus.$emit("removeTodo", index);
     },
     editTodo() {
       this.beforeEditCache = this.title;
@@ -80,20 +88,35 @@ export default {
         this.title = this.beforeEditCache;
       }
       this.editing = false;
-      this.$emit("finishedEdit", {
+      window.eventBus.$emit("finishedEdit", {
         index: this.index,
         todo: {
           id: this.id,
           title: this.title,
           completed: this.completed,
-          editing: this.editing
-        }
+          editing: this.editing,
+        },
       });
     },
     cancelEdit() {
       this.title = this.beforeEditCache;
       this.editing = false;
-    }
-  }
+    },
+    pluralize() {
+      window.eventBus.$emit("pluralize");
+    },
+    handlePluralize() {
+      this.title = this.title + "s";
+      window.eventBus.$emit("finishedEdit", {
+        index: this.index,
+        todo: {
+          id: this.id,
+          title: this.title,
+          completed: this.completed,
+          editing: this.editing,
+        },
+      });
+    },
+  },
 };
 </script>
