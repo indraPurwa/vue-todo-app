@@ -75,8 +75,9 @@ export default {
     },
   },
   methods: {
-    removeTodo(index) {
-      window.eventBus.$emit("removeTodo", index);
+    removeTodo(id) {
+      const index = this.$store.state.todos.findIndex((item) => item.id == id);
+      this.$store.state.todos.splice(index, 1);
     },
     editTodo() {
       this.beforeEditCache = this.title;
@@ -88,15 +89,24 @@ export default {
         this.title = this.beforeEditCache;
       }
       this.editing = false;
-      window.eventBus.$emit("finishedEdit", {
-        index: this.index,
-        todo: {
-          id: this.id,
-          title: this.title,
-          completed: this.completed,
-          editing: this.editing,
-        },
+      const index = this.$store.state.todos.findIndex(
+        (item) => item.id == this.id
+      );
+      this.$store.state.todos.splice(index, 1, {
+        id: this.id,
+        title: this.title,
+        completed: this.completed,
+        editing: this.editing,
       });
+      // window.eventBus.$emit("finishedEdit", {
+      //   index: this.index,
+      //   todo: {
+      //     id: this.id,
+      //     title: this.title,
+      //     completed: this.completed,
+      //     editing: this.editing,
+      //   },
+      // });
     },
     cancelEdit() {
       this.title = this.beforeEditCache;
@@ -107,15 +117,24 @@ export default {
     },
     handlePluralize() {
       this.title = this.title + "s";
-      window.eventBus.$emit("finishedEdit", {
-        index: this.index,
-        todo: {
-          id: this.id,
-          title: this.title,
-          completed: this.completed,
-          editing: this.editing,
-        },
+      const index = this.$store.state.todos.findIndex(
+        (item) => item.id == this.id
+      );
+      this.$store.state.todos.splice(index, 1, {
+        id: this.id,
+        title: this.title,
+        completed: this.completed,
+        editing: this.editing,
       });
+      // window.eventBus.$emit("finishedEdit", {
+      //   index: this.index,
+      //   todo: {
+      //     id: this.id,
+      //     title: this.title,
+      //     completed: this.completed,
+      //     editing: this.editing,
+      //   },
+      // });
     },
   },
 };
