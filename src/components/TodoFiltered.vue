@@ -8,15 +8,16 @@
 <script>
 export default {
   name: "todo-filtered",
-  data() {
-    return {
-      filter: "all",
-    };
+  computed: {
+    filter() {
+      return this.$store.state.filter;
+    },
   },
   methods: {
     changeFilter(filter) {
-      this.filter = filter;
-      window.eventBus.$emit("filterChanged", filter);
+      // window.eventBus.$emit("filterChanged", filter);
+      // this.$store.state.filter = filter;
+      this.$store.dispatch("updateFilter", filter);
     },
   },
 };

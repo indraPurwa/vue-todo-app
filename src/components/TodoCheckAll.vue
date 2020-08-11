@@ -1,7 +1,7 @@
 <template>
   <div>
     <label>
-      <input type="checkbox" :checked="!anyRemaining" @change="allChecked" />
+      <input type="checkbox" @change="allChecked" />
       Check All
     </label>
   </div>
@@ -17,10 +17,10 @@ export default {
   methods: {
     allChecked() {
       // window.eventBus.$emit("checkAllChanged", this.anyRemaining);
-      this.$store.state.todos.forEach((todo) => {
-        todo.completed = event.target.checked;
-        console.log(event.target.checked);
-      });
+      // this.$store.state.todos.forEach((todo) => {
+      //   todo.completed = event.target.checked;
+      // });
+      this.$store.dispatch("checkAll", event.target.checked);
     },
   },
 };
