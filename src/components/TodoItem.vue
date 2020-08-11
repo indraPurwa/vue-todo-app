@@ -7,7 +7,9 @@
         class="todo-item-label"
         v-if="!editing"
         @dblclick="editTodo"
-      >{{ title }}</div>
+      >
+        {{ title }}
+      </div>
       <input
         class="todo-item-edit"
         type="text"
@@ -21,10 +23,10 @@
     </div>
     <div>
       <button @click="pluralize">Plural</button>
-      <span class="remove-item" @click="removeTodo(index)">&times;</span>
+      <span class="remove-item" @click="removeTodo(todo.id)">&times;</span>
     </div>
   </div>
-</template> 
+</template>
 <script>
 export default {
   name: "todo-item",
@@ -69,7 +71,7 @@ export default {
   },
   directives: {
     focus: {
-      inserted: function (el) {
+      inserted: function(el) {
         el.focus();
       },
     },
