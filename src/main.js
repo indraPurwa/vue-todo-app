@@ -1,5 +1,6 @@
 import Vue from "vue";
-import App from "./App.vue";
+// import App from "./App.vue";
+import Master from "./components/layouts/Master";
 import {
   store
 } from "./store/store";
@@ -12,5 +13,5 @@ window.eventBus = new Vue({});
 
 new Vue({
   store: store,
-  render: (h) => h(App),
+  render: (h) => h(Master),
 }).$mount("#app");
