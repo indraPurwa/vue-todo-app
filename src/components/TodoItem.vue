@@ -68,6 +68,10 @@ export default {
       // }
       this.completed = this.checkAll ? true : this.todo.completed;
     },
+    todo(){
+      this.title = this.todo.title;
+      this.completed = this.todo.completed;
+    }
   },
   directives: {
     focus: {

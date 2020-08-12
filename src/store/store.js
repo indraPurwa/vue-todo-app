@@ -77,12 +77,15 @@ export const store = new Vuex.Store({
         },
         deleteTodo(state, id) {
             const index = state.todos.findIndex((item) => item.id == id);
-            state.todos.splice(index, 1);
+            if (index > 0) {
+                state.todos.splice(index, 1);
+            }
         },
         updateTodo(state, todo) {
             const index = state.todos.findIndex(
                 (item) => item.id == todo.id
             );
+            // console.log(todo);
             state.todos.splice(index, 1, {
                 id: todo.id,
                 title: todo.title,
@@ -185,6 +188,7 @@ export const store = new Vuex.Store({
             })
         },
         updateTodo(context, todo) {
+            // console.log(todo);
             // axios.patch('/todos/' + todo.id, {
             //         title: todo.title,
             //         completed: todo.completed
@@ -199,8 +203,9 @@ export const store = new Vuex.Store({
                 id: todo.id,
                 title: todo.title,
                 completed: todo.completed,
-                timestamp: new Date()
-            }).then(()=>{
+                // timestamp: new Date()
+            },{merge:true})
+            .then(()=>{
                 context.commit('updateTodo', todo);
             })
         },
@@ -221,17 +226,48 @@ export const store = new Vuex.Store({
                     const data = {
                         id: doc.id,
                         title: doc.data().title,
+                        // title: doc.data().title+' '+doc.data().timestamp,
                         completed: doc.data().completed,
+                        timestamp: doc.data().timestamp,
                     };
                     tempTodos.push(data);
                 })
                 context.state.loading=false;
-
                 const tempTodosSorted = tempTodos.sort( (a,b) => {
-                    return a.timestamp = b.timestamp
+                    return a.timestamp - b.timestamp
                 })
                 context.commit('retrieveTodos', tempTodosSorted);
             })
+        },
+        initRealtimeListeners(context){
+            db.collection("todos").onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === "added") {
+                            // console.log("Added", change.doc.data());
+                            const source = change.doc.metadata.hasPendingWrites ? "Local" : "Server";
+                            if (source === 'Server') {
+                                context.commit('addTodo', {
+                                    id: change.doc.id,
+                                    title: change.doc.data().title,
+                                    completed: false,
+                                });
+                            }
+                        }
+                        if (change.type === "modified") {
+                            let data = {
+                                id: change.doc.id,
+                                title: change.doc.data().title,
+                                completed: change.doc.data().completed,
+                                editing: false,
+                            };
+                            context.commit('updateTodo', data);
+                        }
+                        if (change.type === "removed") {
+                            // console.log("Removed", change.doc.data());
+                            context.commit('deleteTodo', change.doc.id);
+                        }
+                    });
+                });
         }
     }
 });
