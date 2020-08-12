@@ -11,6 +11,7 @@
     "axios": "^0.19.2",
     "core-js": "^3.6.4",
     "css-loader": "^3.4.2",
+    "firebase": "^7.17.2",
     "node-sass": "^4.14.1",
     "sass-loader": "^8.0.2",
     "v-animate-css": "0.0.3",
