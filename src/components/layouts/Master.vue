@@ -2,19 +2,22 @@
   <div id="app">
     <ul class="nav">
       <li>
-        <a href="/">Home</a>
+        <router-link :to="{ name: 'home' }">Home</router-link>
       </li>
       <li>
-        <a href="/">About</a>
+        <router-link :to="{ name: 'todo' }">Todo</router-link>
       </li>
       <li>
-        <a href="/">Login</a>
+        <router-link :to="{ name: 'about' }">About</router-link>
       </li>
       <li>
-        <a href="/">Register</a>
+        <router-link :to="{ name: 'login' }">Login</router-link>
+      </li>
+      <li>
+        <router-link :to="{ name: 'register' }">Register</router-link>
       </li>
     </ul>
-    <div>COntent for each page goes here</div>
+    <router-view></router-view>
   </div>
 </template>
 <script>
