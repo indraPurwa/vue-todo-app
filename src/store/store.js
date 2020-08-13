@@ -1,12 +1,13 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
 import axios from 'axios';
-import db from '../firebase';
+import * as fb from '../firebase';
 
 Vue.use(Vuex);
 axios.defaults.baseURL = 'http://localhost/GITHUB/vue-todo-app-backend/public/api';
 export const store = new Vuex.Store({
     state: {
+        token: localStorage.getItem('access_token') || null,
         filter: "all",
         todos: [
             // {
@@ -95,6 +96,9 @@ export const store = new Vuex.Store({
         },
         retrieveTodos(state, todos) {
             state.todos = todos;
+        },
+        login(state, token) {
+            state.token = token;
         }
     },
     actions: {
@@ -110,18 +114,18 @@ export const store = new Vuex.Store({
             //     .catch(error => {
             //         console.log(error);
             //     })
-            db.collection('todos')
-            .add({
-                title: todo.title,
-                completed: false,
-                timestamp: new Date()
-            }).then(docRef=>{
-                context.commit('addTodo', {
-                    id: docRef.id,
+            fb.fstore.collection('todos')
+                .add({
                     title: todo.title,
                     completed: false,
-                });
-            })
+                    timestamp: new Date()
+                }).then(docRef => {
+                    context.commit('addTodo', {
+                        id: docRef.id,
+                        title: todo.title,
+                        completed: false,
+                    });
+                })
         },
         clearCompleted(context) {
             // const completed = store.state.todos
@@ -139,14 +143,14 @@ export const store = new Vuex.Store({
             //     .catch(error => {
             //         console.log(error);
             //     })
-            db.collection('todos').where('completed','==',true).get()
-            .then(querySnapshot => {
-                querySnapshot.forEach(doc=>{
-                    doc.ref.delete().then(()=>{
-                        context.commit('clearCompleted');
+            fb.fstore.collection('todos').where('completed', '==', true).get()
+                .then(querySnapshot => {
+                    querySnapshot.forEach(doc => {
+                        doc.ref.delete().then(() => {
+                            context.commit('clearCompleted');
+                        })
                     })
                 })
-            })
         },
         updateFilter(context, filter) {
             context.commit('updateFilter', filter);
@@ -162,17 +166,17 @@ export const store = new Vuex.Store({
             //     .catch(error => {
             //         console.log(error);
             //     })
-            db.collection('todos').get()
-            .then(querySnapshot=>{
-                querySnapshot.forEach(doc=>{
-                    doc.ref.update({
-                        completed: checked
-                    })
-                    .then(()=>{
-                        context.commit('checkAll', checked);
+            fb.fstore.collection('todos').get()
+                .then(querySnapshot => {
+                    querySnapshot.forEach(doc => {
+                        doc.ref.update({
+                                completed: checked
+                            })
+                            .then(() => {
+                                context.commit('checkAll', checked);
+                            })
                     })
                 })
-            })
         },
         deleteTodo(context, id) {
             // axios.delete('/todos/' + id)
@@ -182,10 +186,10 @@ export const store = new Vuex.Store({
             //     .catch(error => {
             //         console.log(error);
             //     })
-            db.collection('todos').doc(id).delete()
-            .then(()=>{
-                context.commit('deleteTodo', id);
-            })
+            fb.fstore.collection('todos').doc(id).delete()
+                .then(() => {
+                    context.commit('deleteTodo', id);
+                })
         },
         updateTodo(context, todo) {
             // console.log(todo);
@@ -199,18 +203,20 @@ export const store = new Vuex.Store({
             //     .catch(error => {
             //         console.log(error);
             //     })
-            db.collection('todos').doc(todo.id).set({
-                id: todo.id,
-                title: todo.title,
-                completed: todo.completed,
-                // timestamp: new Date()
-            },{merge:true})
-            .then(()=>{
-                context.commit('updateTodo', todo);
-            })
+            fb.fstore.collection('todos').doc(todo.id).set({
+                    id: todo.id,
+                    title: todo.title,
+                    completed: todo.completed,
+                    // timestamp: new Date()
+                }, {
+                    merge: true
+                })
+                .then(() => {
+                    context.commit('updateTodo', todo);
+                })
         },
         retrieveTodos(context) {
-            context.state.loading=true;
+            context.state.loading = true;
             // axios.get('/todos')
             //     .then(response => {
             //         context.commit('retrieveTodos', response.data);
@@ -218,56 +224,76 @@ export const store = new Vuex.Store({
             //     .catch(error => {
             //         console.log(error);
             //     })
-            db.collection('todos').get()
-            .then(querySnapshot => {
-                let tempTodos=[];
-                querySnapshot.forEach(doc => {
-                    // console.log(doc.data());
-                    const data = {
-                        id: doc.id,
-                        title: doc.data().title,
-                        // title: doc.data().title+' '+doc.data().timestamp,
-                        completed: doc.data().completed,
-                        timestamp: doc.data().timestamp,
-                    };
-                    tempTodos.push(data);
+            fb.fstore.collection('todos').get()
+                .then(querySnapshot => {
+                    let tempTodos = [];
+                    querySnapshot.forEach(doc => {
+                        // console.log(doc.data());
+                        const data = {
+                            id: doc.id,
+                            title: doc.data().title,
+                            // title: doc.data().title+' '+doc.data().timestamp,
+                            completed: doc.data().completed,
+                            timestamp: doc.data().timestamp,
+                        };
+                        tempTodos.push(data);
+                    })
+                    context.state.loading = false;
+                    const tempTodosSorted = tempTodos.sort((a, b) => {
+                        return a.timestamp - b.timestamp
+                    })
+                    context.commit('retrieveTodos', tempTodosSorted);
                 })
-                context.state.loading=false;
-                const tempTodosSorted = tempTodos.sort( (a,b) => {
-                    return a.timestamp - b.timestamp
-                })
-                context.commit('retrieveTodos', tempTodosSorted);
-            })
         },
-        initRealtimeListeners(context){
-            db.collection("todos").onSnapshot(snapshot => {
-                    snapshot.docChanges().forEach(change => {
-                        if (change.type === "added") {
-                            // console.log("Added", change.doc.data());
-                            const source = change.doc.metadata.hasPendingWrites ? "Local" : "Server";
-                            if (source === 'Server') {
-                                context.commit('addTodo', {
-                                    id: change.doc.id,
-                                    title: change.doc.data().title,
-                                    completed: false,
-                                });
-                            }
-                        }
-                        if (change.type === "modified") {
-                            let data = {
+        initRealtimeListeners(context) {
+            fb.fstore.collection("todos").onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === "added") {
+                        // console.log("Added", change.doc.data());
+                        const source = change.doc.metadata.hasPendingWrites ? "Local" : "Server";
+                        if (source === 'Server') {
+                            context.commit('addTodo', {
                                 id: change.doc.id,
                                 title: change.doc.data().title,
-                                completed: change.doc.data().completed,
-                                editing: false,
-                            };
-                            context.commit('updateTodo', data);
+                                completed: false,
+                            });
                         }
-                        if (change.type === "removed") {
-                            // console.log("Removed", change.doc.data());
-                            context.commit('deleteTodo', change.doc.id);
-                        }
-                    });
+                    }
+                    if (change.type === "modified") {
+                        let data = {
+                            id: change.doc.id,
+                            title: change.doc.data().title,
+                            completed: change.doc.data().completed,
+                            editing: false,
+                        };
+                        context.commit('updateTodo', data);
+                    }
+                    if (change.type === "removed") {
+                        // console.log("Removed", change.doc.data());
+                        context.commit('deleteTodo', change.doc.id);
+                    }
                 });
+            });
+        },
+        async login(context, form) {
+            // localStorage.setItem('access_token', 'xxxxx');
+            context;
+            const {
+                token
+            } = await fb.auth.signInWithEmailAndPassword(form.username, form.password);
+            console.log(token);
+            // context.commit('addTodo', token);
+        },
+        async register(context, form) {
+            const {
+                user
+            } = await fb.auth.createUserWithEmailAndPassword(form.username, form.password)
+            await fb.usersCollection.doc(user.uid).set({
+                name: form.name,
+            });
+            console.log(user);
+            context;
+            // context.dispatch('register', user);
         }
     }
 });
