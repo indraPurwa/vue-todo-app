@@ -15,7 +15,7 @@
         <input type="password" class="login-input" v-model="password" />
       </div>
       <div class="form-control">
-        <button type="submit" class="btn-submit">Login</button>
+        <button type="submit" class="btn-submit">Register</button>
       </div>
     </form>
   </div>
@@ -39,8 +39,12 @@ export default {
           name: this.name,
           password: this.password,
         })
-        .then(() => {
-          this.$router.push({ name: "login" });
+        .then((response) => {
+          console.log(response);
+          // this.$router.push({ name: "login" });
+        })
+        .catch((error) => {
+          console.log(error);
         });
     },
   },

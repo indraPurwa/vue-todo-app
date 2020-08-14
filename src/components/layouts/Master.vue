@@ -10,11 +10,14 @@
       <li>
         <router-link :to="{ name: 'about' }">About</router-link>
       </li>
-      <li>
+      <li v-if="!loggedIn">
         <router-link :to="{ name: 'login' }">Login</router-link>
       </li>
-      <li>
+      <li v-if="!loggedIn">
         <router-link :to="{ name: 'register' }">Register</router-link>
+      </li>
+      <li v-if="loggedIn">
+        <a href="#" @click="logout()">logout</a>
       </li>
     </ul>
     <router-view></router-view>
@@ -22,7 +25,19 @@
 </template>
 <script>
 export default {
-  // name: "Master",
+  name: "Master",
+  methods: {
+    logout() {
+      this.$store.dispatch("logout");
+    },
+  },
+  computed: {
+    loggedIn() {
+      // console.log(localStorage.getItem("access_token"));
+      // console.log(this.$store.getters.loggedIn);
+      return this.$store.getters.loggedIn;
+    },
+  },
 };
 </script>
 

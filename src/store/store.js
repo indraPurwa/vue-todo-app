@@ -2,6 +2,7 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import axios from 'axios';
 import * as fb from '../firebase';
+import router from '../routes';
 
 Vue.use(Vuex);
 axios.defaults.baseURL = 'http://localhost/GITHUB/vue-todo-app-backend/public/api';
@@ -23,6 +24,7 @@ export const store = new Vuex.Store({
             //     editing: false,
             // },
         ],
+        userProfile: {}
     },
     getters: {
         remaining(state) {
@@ -46,6 +48,9 @@ export const store = new Vuex.Store({
                 state.todos.filter((todo) => todo.completed).length > 0
             );
         },
+        loggedIn(state) {
+            return state.token !== null
+        }
     },
     mutations: {
         addTodo(state, todo) {
@@ -97,9 +102,15 @@ export const store = new Vuex.Store({
         retrieveTodos(state, todos) {
             state.todos = todos;
         },
-        login(state, token) {
-            state.token = token;
-        }
+        // login(state, token) {
+        //     state.token = token;
+        // },
+        setUserProfile(state, val) {
+            state.userProfile = val
+        },
+        setToken(state, token) {
+            state.token = token
+        },
     },
     actions: {
         addTodo(context, todo) {
@@ -275,25 +286,51 @@ export const store = new Vuex.Store({
                 });
             });
         },
-        async login(context, form) {
-            // localStorage.setItem('access_token', 'xxxxx');
-            context;
-            const {
-                token
-            } = await fb.auth.signInWithEmailAndPassword(form.username, form.password);
-            console.log(token);
-            // context.commit('addTodo', token);
-        },
-        async register(context, form) {
+        async login({
+            dispatch
+        }, form) {
             const {
                 user
-            } = await fb.auth.createUserWithEmailAndPassword(form.username, form.password)
-            await fb.usersCollection.doc(user.uid).set({
+            } = await fb.auth.signInWithEmailAndPassword(form.username, form.password).catch(error => {
+                alert(error.message)
+            })
+            localStorage.setItem('access_token', 'LOGIN_SUCCESS')
+            dispatch('fetchUserProfile', user)
+        },
+        async register({
+            dispatch
+        }, form) {
+            const {
+                user
+            } = await fb.auth.createUserWithEmailAndPassword(form.username, form.password).catch(error => {
+                alert(error.message)
+            })
+            await fb.fstore.collection('users').doc(user.uid).set({
                 name: form.name,
-            });
-            console.log(user);
-            context;
-            // context.dispatch('register', user);
-        }
+            }).catch(error => {
+                alert(error.message)
+            })
+            dispatch
+            router.push('/login')
+        },
+        async fetchUserProfile({
+            commit
+        }, user) {
+            const userProfile = await fb.fstore.collection('users').doc(user.uid).get()
+            commit('setUserProfile', userProfile.data())
+            commit('setToken', 'LOGIN_SUCCESS')
+            if (router.currentRoute.path === '/login') {
+                router.push('/')
+            }
+        },
+        async logout({
+            commit
+        }) {
+            await fb.auth.signOut();
+            commit('setUserProfile', {});
+            commit('setToken', null)
+            localStorage.setItem('access_token', null)
+            router.push('/login');
+        },
     }
 });

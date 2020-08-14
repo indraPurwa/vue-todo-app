@@ -1,40 +1,67 @@
-import LandingPage from "./components/marketing/LandingPage.vue";
-import About from "./components/marketing/About";
-import TestTodoVariable from "./components/marketing/TestTodoVariable";
-import Login from "./components/auth/Login";
-import Register from "./components/auth/Register";
-import App from "./App.vue";
+import Vue from "vue";
+import VueRouter from "vue-router";
+import {
+    auth
+} from './firebase';
+
+Vue.use(VueRouter);
 
 const routes = [{
         path: "/",
         name: 'home',
-        component: LandingPage
+        component: () => import("./components/marketing/LandingPage.vue"),
+        meta: {
+            requiresAuth: true
+        }
     },
     {
         path: "/todo",
         name: 'todo',
-        component: App
-    },
-    {
-        path: "/about",
-        name: 'about',
-        component: About
-    },
-    {
-        path: "/login",
-        name: 'login',
-        component: Login
-    },
-    {
-        path: "/register",
-        name: 'register',
-        component: Register
+        component: () => import("./App.vue"),
+        meta: {
+            requiresAuth: true
+        }
     },
     {
         path: '/todoDetail/:id',
         name: 'todoDetail',
-        component: TestTodoVariable
+        component: () => import("./components/marketing/TestTodoVariable"),
+        meta: {
+            requiresAuth: true
+        }
     },
+    {
+        path: "/about",
+        name: 'about',
+        component: () => import("./components/marketing/About"),
+        meta: {
+            requiresAuth: true
+        }
+    },
+    {
+        path: "/login",
+        name: 'login',
+        component: () => import("./components/auth/Login"),
+    },
+    {
+        path: "/register",
+        name: 'register',
+        component: () => import("./components/auth/Register"),
+    },
+
 ];
 
-export default routes;
+const router = new VueRouter({
+    routes,
+    base: process.env.BASE_URL,
+    mode: 'history'
+});
+router.beforeEach((to, from, next) => {
+    const requiresAuth = to.matched.some(x => x.meta.requiresAuth);
+    if (requiresAuth && !auth.currentUser) {
+        next('/login')
+    } else {
+        next()
+    }
+})
+export default router;
